@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'ecommerce'
+    'ecommerce',
+    'rest_framework'
 ]
 
 MIDDLEWARE = [
@@ -81,6 +82,8 @@ DATABASES = {
 }
 
 
+AUTH_USER_MODEL = 'ecommerce.User'
+
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -105,7 +108,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'pt-br'
 
-TIME_ZONE = 'America/recife'
+TIME_ZONE = 'America/Recife'
 
 USE_I18N = True
 

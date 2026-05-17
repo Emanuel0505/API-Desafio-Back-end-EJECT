@@ -39,7 +39,7 @@ class Product(models.Model):
 class Review(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='review') 
     content = models.TextField()
-    star = models.PositiveSmallIntegerField(max=5, default=0, blank=False, null=False)
+    star = models.PositiveSmallIntegerField(default=0, blank=False, null=False)
     date_created = models.DateTimeField(db_default=Now())
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='review')
 
