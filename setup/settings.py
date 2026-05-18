@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'rest_framework'
 ]
 
+AUTH_USER_MODEL = 'ecommerce.User'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -82,7 +84,7 @@ DATABASES = {
 }
 
 
-AUTH_USER_MODEL = 'ecommerce.User'
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
