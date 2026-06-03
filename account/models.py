@@ -32,7 +32,7 @@ class User(AbstractUser):
     }
     fullname = models.CharField(max_length=255)
     date_of_birth = models.DateField(null=True, blank=True)
-    phone = models.CharField(max_length=13)
+    phone = models.CharField(max_length=16)
     cpf = models.CharField(max_length=11)
     email = models.EmailField(null=False, unique=True)
     usertype = models.CharField(choices=USERTYPE, default='C')
