@@ -53,8 +53,6 @@ class User_Serializer(serializers.ModelSerializer):
         if date_of_birth_invalid_age(value):
             raise serializers.ValidationError('Data de Nascimento: Ter no mínimo 18 anos.')
         
-
-        
         return value
 
     def validate_fullname(self, value):
