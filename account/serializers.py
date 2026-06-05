@@ -1,3 +1,6 @@
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.http import urlsafe_base64_decode
+
 from rest_framework import serializers
 from .models import User
 from .validators import *
@@ -22,26 +25,7 @@ class User_Serializer(serializers.ModelSerializer):
         }
 
     def validate_password(self, value):
-        """
-        Validação customizada para senha
-        """
-
-        if len(value) < 8:
-            raise serializers.ValidationError('Senha: Deve conter no minimo 8 caracteres.')
-        
-        if not re.search(r'[^a-zA-Z0-9]', value):
-            raise serializers.ValidationError('Senha: Deve conter no minimo 1 caractere especial.')
-        
-        if not re.search(r'[A-Z]', value):
-            raise serializers.ValidationError('Senha: Deve conter no minimo 1 letra maiúscula.')
-        
-        if not re.search(r'[a-z]', value):
-            raise serializers.ValidationError('Senha: Deve conter no minimo 1 letra minúscula.')
-        
-        if not re.search(r'[0-9]', value):
-            raise serializers.ValidationError('Senha: Deve conter no minimo 1 número.')
-        
-        return value
+        return validate_password_unique(value)
 
     def validate_date_of_birth(self, value):
         if value == None:
@@ -86,5 +70,43 @@ class User_Serializer(serializers.ModelSerializer):
 
         return user
             
+class Email_Serializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
 
+    class Meta:
+        fields = ('email',)
 
+class Reset_Password_Serializer(serializers.Serializer):
+    password = serializers.CharField(write_only = True)
+    confirm_password = serializers.CharField(write_only = True)
+
+    class Meta:
+        fields = ('password','confirm_password',)
+
+    def validate_password(self, value):
+        return validate_password_unique(value)
+    
+    def validate_confirm_password(self, value):
+        return validate_password_unique(value)
+    
+    def validate(self, attrs):
+        if not attrs['password'] == attrs['confirm_password']:
+            raise serializers.ValidationError('As senhas não coicidem')
+        else:
+            password = attrs.get('password')
+            token = self.context.get('kwargs').get('token')
+            encoded_pk = self.context.get('kwargs').get('encoded_pk')
+            
+            if token is None or encoded_pk is None:
+                serializers.ValidationError('Missing data')
+
+            pk = urlsafe_base64_decode(encoded_pk).decode()
+            user = User.objects.get(pk=pk)
+
+            if not PasswordResetTokenGenerator().check_token(user, token):
+                raise serializers.ValidationError('O token é invalido')
+            
+            user.set_password(password)
+            user.save()
+        return attrs
+    
