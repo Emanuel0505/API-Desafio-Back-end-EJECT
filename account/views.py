@@ -15,8 +15,6 @@ from .models import User
 from .serializers import User_Serializer, Email_Serializer
 from . import serializers
 
-
-
 class User_register(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     queryset = User.objects.all()

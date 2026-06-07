@@ -95,6 +95,7 @@ DATABASES = {
     }
 }
 
+PASSWORD_RESET_TIMEOUT = 10800 #é em segundos; total 3 horas
 
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.PBKDF2PasswordHasher",
