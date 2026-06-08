@@ -45,6 +45,7 @@ INSTALLED_APPS = [
 
     #apps externos
     'colorfield',
+    'django_cleanup.apps.CleanupConfig',
     
     #rest framerwork e adicionais
     'rest_framework',
