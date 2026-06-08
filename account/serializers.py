@@ -7,6 +7,8 @@ from .validators import *
 from datetime import date
 
 class User_Serializer(serializers.ModelSerializer):
+    password_confirm = serializers.CharField(write_only=True)
+
     class Meta:
         model = User
         fields = [
@@ -15,6 +17,7 @@ class User_Serializer(serializers.ModelSerializer):
             'cpf',
             'email',
             'password',
+            'password_confirm',
             'phone',
             'date_of_birth',
             'usertype'
@@ -57,6 +60,9 @@ class User_Serializer(serializers.ModelSerializer):
         if phone_invalid(attrs['phone']):
             raise serializers.ValidationError('Celular: Seguir o modelo (84) 9 9999-9999')
         
+        if attrs['password'] != attrs['password_confirm']:
+            raise serializers.ValidationError('password_confirm: Senhas não coincidem')
+
         return attrs
 
     def create(self, validated_data):
@@ -64,12 +70,57 @@ class User_Serializer(serializers.ModelSerializer):
         Criação do Usuario 
         """
 
-        validated_data.pop('passeord_confirm', None)
+        validated_data.pop('password_confirm', None)
 
         user = User.objects.create_user(**validated_data)
 
         return user
-            
+    
+    def update(self, instance, validated_data):
+        validated_data.pop('password_confirm', None)
+        
+        password = validated_data.pop('password', None)
+        if password:
+            instance.set_password(password)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        instance.save()
+        return instance
+
+class User_update_Serializer(serializers.ModelSerializer):
+    password_confirm = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'fullname',
+            'cpf',
+            'email',
+            'password',
+            'password_confirm',
+            'phone',
+            'date_of_birth',
+        ]
+        extra_kwargs = {
+            'password': {'write_only' : True}
+
+        }
+    def update(self, instance, validated_data):
+        validated_data.pop('password_confirm', None)
+        
+        password = validated_data.pop('password', None)
+        if password:
+            instance.set_password(password)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        instance.save()
+        return instance
+
+
 class Email_Serializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
 
@@ -84,9 +135,6 @@ class Reset_Password_Serializer(serializers.Serializer):
         fields = ('password','confirm_password',)
 
     def validate_password(self, value):
-        return validate_password_unique(value)
-    
-    def validate_confirm_password(self, value):
         return validate_password_unique(value)
     
     def validate(self, attrs):

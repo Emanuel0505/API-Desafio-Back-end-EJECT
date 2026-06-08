@@ -12,16 +12,24 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 
 from .models import User
-from .serializers import User_Serializer, Email_Serializer
 from . import serializers
 
 class User_register(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     queryset = User.objects.all()
-    serializer_class =  User_Serializer
+    serializer_class =  serializers.User_Serializer
     http_method_names = ['post']
 
-class Password_Reset(generics.GenericAPIView):
+class User_update(generics.RetrieveUpdateAPIView):
+    permission_classes = {IsAuthenticated}
+    queryset = User.objects.all()
+    serializer_class = serializers.User_update_Serializer
+    http_method_names = ['get', 'put', 'patch']
+
+    def get_object(self):
+        return self.request.user
+
+class Forgot_Password(generics.GenericAPIView):
     permission_classes = [AllowAny]
     serializer_class = serializers.Email_Serializer
 
@@ -72,10 +80,6 @@ class Password_Reset(generics.GenericAPIView):
         
         else:
             return response.Response(
-                {
-                    'mensage':
-                    'Usuário não existe'
-                },
                 status=status.HTTP_400_BAD_REQUEST
             )
         
