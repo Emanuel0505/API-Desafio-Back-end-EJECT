@@ -114,7 +114,7 @@ class Stock_Serializer(serializers.ModelSerializer):
             size=size.upper(),
         )
 
-        variation_id = self.instance.pk if self.instance else None
+        variation_id = self.instance.id if self.instance else None
 
         # No PUT/PATCH, ignora o próprio registro
         if variation_id:
