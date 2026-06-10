@@ -1,21 +1,10 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.conf import settings
 from django.utils import timezone
-
-class User(AbstractUser):
-    USERTYPE = {
-        ('C','Cliente'),
-        ('L','Lojista')
-    }
-    fullname = models.CharField(max_length=255)
-    date_of_birth = models.DateField(null=True, blank=True)
-    phone = models.CharField(max_length=13)
-    cpf = models.CharField(max_length=11)
-    usertype = models.CharField(choices=USERTYPE, default='L')
-    #created = (não sei já tem no do proprio django)
-
-    def __str__(self):
-        return self.fullname
+from django.utils.text import slugify
+from colorfield.fields import ColorField
+from account.models import User
+import os
 
 class Category(models.Model):
     name = models.CharField()
@@ -24,25 +13,54 @@ class Category(models.Model):
         return self.name
 
 class Product(models.Model):
-    TAMANHO = (
-        ('P', 'Pequeno'),
-        ('M', 'Médio'),
-        ('G', 'Grande'),
-        ('GG', 'Extra-Grande'),
-    )
-
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=150, unique=True)
     content = models.TextField()
-    color = models.CharField()
-    size = models.CharField(max_length=2, choices= TAMANHO)
-    amount = models.PositiveIntegerField()
+    price = models.DecimalField(max_digits=9,decimal_places=2, blank= False, null=False, default=100)
     category = models.ForeignKey(Category, blank=False, null= False, on_delete=models.PROTECT)
+    active = models.BooleanField(default=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='products')
+    created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return self.title
 
+def path_product_image(instance, filename):
+    ext = filename.split('.')[-1]
+    if instance.product and instance.product.id:
+        count_image = instance.product.images.count()
+    else:
+        count_image = 0
+        
+    image_name = f'{count_image+1}.{ext}'
+
+    product_name = slugify(instance.product.title)
+    product_path = f'{instance.product.id}_{product_name}'
+
+    #retorna products/id_nameproduct/number.jpg
+    return os.path.join('ecommerce/products', product_path, image_name)
+
+class Images_product(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to=path_product_image)
+
+class Stock(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='product')
+    amount = models.PositiveIntegerField(null=False, blank=False, default=1)
+    color_name = models.CharField(max_length=50, null=False, blank=False, default='Black')
+    color_hexadecimal = ColorField(default = '#000000',  null = False, blank = False)
+    size = models.CharField(null= False, blank= False)
+
+    def __str__(self):
+        return f'Product {self.product.title} and color {self.color_name}'
+    
+    def save(self, *args, **kwargs):
+        self.color_name = self.color_name.lower()
+        self.size = self.size.upper()
+
+        return super().save(*args, **kwargs)
+
 class Review(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='review') 
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='review') 
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='review')
     content = models.TextField()
     star = models.PositiveSmallIntegerField(default=0, blank=False, null=False)
@@ -52,6 +70,7 @@ class Review(models.Model):
         return self.content
 
 class Address(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='address')
     cep = models.CharField(max_length=8, blank=False, null=False)
     state = models.CharField(max_length=2)
     city = models.CharField()
