@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     #apps externos
     'colorfield',
     'django_cleanup.apps.CleanupConfig',
+    'django_filters',
     
     #rest framerwork e adicionais
     'rest_framework',
@@ -169,6 +170,8 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 12,
 }
 
 SIMPLE_JWT = {

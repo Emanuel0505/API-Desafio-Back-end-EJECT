@@ -44,7 +44,7 @@ class Images_product(models.Model):
     image = models.ImageField(upload_to=path_product_image)
 
 class Stock(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='product')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='stock')
     amount = models.PositiveIntegerField(null=False, blank=False, default=1)
     color_name = models.CharField(max_length=50, null=False, blank=False, default='Black')
     color_hexadecimal = ColorField(default = '#000000',  null = False, blank = False)
