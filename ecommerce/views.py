@@ -16,7 +16,6 @@ class Category_Viewsets(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'put', 'patch']
 
 class Product_Viewsets(viewsets.ModelViewSet):
-    queryset = Product.objects.all().distinct()
     serializer_class = Product_Serializer
     permission_classes = [IsLojista]
     http_method_names = ['get', 'post', 'put', 'patch', 'delete']
@@ -31,6 +30,20 @@ class Product_Viewsets(viewsets.ModelViewSet):
     ordering_fields = ['price', 'created_at']
     ordering = ['-created_at']
 
+    def get_queryset(self):
+        user = self.request.user
+        
+        queryset = Product.objects.all().distinct()
+
+        #para admins
+        if user.is_staff:
+            return queryset
+        
+        if getattr(user, 'usertype', None) == 'L':
+            return queryset.filter(author=user)
+
+        return queryset.filter(active=True)
+    
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
