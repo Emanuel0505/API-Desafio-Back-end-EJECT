@@ -66,7 +66,7 @@ class Forgot_Password(generics.GenericAPIView):
                 subject='Redefinição de Senha - NewStyle',
                 message= plain_message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=['vivi.emanuel05@gmail.com'],
+                recipient_list=[email,],
                 fail_silently=False,
             )
 
