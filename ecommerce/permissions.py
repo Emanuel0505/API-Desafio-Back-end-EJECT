@@ -23,3 +23,18 @@ class IsLojista(BasePermission):
             request.user.is_staff or 
             (hasattr(obj, 'author') and obj.author == request.user)
         ) 
+
+class IsCliente(BasePermission):
+    """
+    Permissão customizada para clientes
+    """
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        
+        return bool(
+            request.user and
+            request.user.is_authenticated and
+            (request.user.usertype == 'C' or request.user.is_staff)
+        )
+
