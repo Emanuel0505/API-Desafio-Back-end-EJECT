@@ -75,14 +75,4 @@ class contact_support_email(models.Model):
     subject = models.CharField(max_length=255, blank=False, null=False)
     content = models.TextField(blank=False, null=False)
 
-class Address(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='address')
-    cep = models.CharField(max_length=8, blank=False, null=False)
-    state = models.CharField(max_length=2)
-    city = models.CharField()
-    neightborhood = models.CharField()
-    street = models.CharField()
-    number = models.CharField()
-    
-    def __str__(self):
-        return self.cep
+

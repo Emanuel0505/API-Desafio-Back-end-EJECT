@@ -164,7 +164,4 @@ class Contact_Support_email_Serializer(serializers.ModelSerializer):
         
         return value
 
-class Address_Serializer(serializers.ModelSerializer):
-    class Meta:
-        model = Address
-        fields = '__all__'
+

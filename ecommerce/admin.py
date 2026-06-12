@@ -20,7 +20,5 @@ class Stockadmin(admin.ModelAdmin):
 class Reviewadmin(admin.ModelAdmin):
     list_display = ('user', 'product', 'content', 'star', 'date_created', )
 
-@admin.register(Address)
-class Addressadmin(admin.ModelAdmin):
-    list_display = ('cep', 'state', 'city', 'neightborhood', 'street', 'number', )
+
     

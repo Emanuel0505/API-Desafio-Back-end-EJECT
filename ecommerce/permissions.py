@@ -37,4 +37,13 @@ class IsCliente(BasePermission):
             request.user.is_authenticated and
             (request.user.usertype == 'C' or request.user.is_staff)
         )
+    def has_object_permission(self, request, view, obj):
+        if request.method in SAFE_METHODS:
+            return True
+        
+        
+        return bool(
+            request.user.is_staff or 
+            (hasattr(obj, 'user') and obj.user == request.user)
+        )
 

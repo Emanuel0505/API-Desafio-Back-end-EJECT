@@ -125,8 +125,3 @@ class Contact_Support_email_viewset(viewsets.ModelViewSet):
 class Review_Viewsets(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = Review_Serializer
-
-class Address_Viewsets(viewsets.ModelViewSet):
-    queryset = Address.objects.all()
-    serializer_class = Address_Serializer
-  
