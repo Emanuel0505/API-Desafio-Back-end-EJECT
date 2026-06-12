@@ -170,8 +170,23 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
+    #paginação
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 12,
+
+    #nivel de acesso
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        #para todos os usuarios
+        'anon': '500/hour',       
+        'user': '1000/hour',   
+        
+        #para endpoints especificos
+        'contact_email': '5/hour',   
+    }
 }
 
 SIMPLE_JWT = {
