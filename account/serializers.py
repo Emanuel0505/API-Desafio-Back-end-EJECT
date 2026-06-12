@@ -2,9 +2,13 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_decode
 
 from rest_framework import serializers
-from .models import User
-from .validators import *
+
 from datetime import date
+import re
+import requests
+
+from .models import User, Address
+from .validators import *
 
 class User_Serializer(serializers.ModelSerializer):
     password_confirm = serializers.CharField(write_only=True)
@@ -62,6 +66,7 @@ class User_Serializer(serializers.ModelSerializer):
         
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError('password_confirm: Senhas não coincidem')
+            
 
         return attrs
 
@@ -119,6 +124,66 @@ class User_update_Serializer(serializers.ModelSerializer):
         
         instance.save()
         return instance
+
+class Address_Serializer(serializers.ModelSerializer):
+
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    class Meta:
+        model = Address
+        fields = [
+            'user',
+            'name',
+            'cep',
+            'state',
+            'city',
+            'neightborhood',
+            'street',
+            'number',
+        ]
+
+    def validate_cep(self, value):
+        
+        url = f'https://brasilapi.com.br/api/cep/v1/{value}'
+        response = requests.get(url)
+
+        if response.status_code == 400:
+            raise serializers.ValidationError('CEP deve conter 8 digitos')
+
+        if response.status_code == 404:    
+            raise serializers.ValidationError('CEP não encontrado')
+        
+        if response.status_code == 500:
+            raise serializers.ValidationError('CEP: Erro ao consultar o CEP')
+
+        return value
+    
+    def validate_name(self, value):
+        if not value.isalpha():
+            raise serializers.ValidationError('Nome: Não deve conter numeros e caracteres especiais')
+
+        if not len(value) <=50:
+            raise serializers.ValidationError('Nome: Maximo de 50 caracteres')
+        
+        return value
+        
+    def validate_state(self, value):
+        if not len(value) == 2:
+            raise serializers.ValidationError('Estado: Informar UF')
+        
+        if not value.isalpha():
+            raise serializers.ValidationError('Estado: Não deve conter numeros e caracteres especiais')
+
+        return value
+    
+    def validate_number(self, value):
+        if not value.isdigit():
+            raise serializers.ValidationError('Number: Não deve conter letras e caracteres especiais')
+
+        return value
+                
+
+
+
 
 
 class Email_Serializer(serializers.Serializer):

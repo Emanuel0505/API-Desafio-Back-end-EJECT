@@ -11,8 +11,9 @@ from rest_framework import viewsets, generics, status, response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 
-from .models import User
+from .models import User, Address
 from . import serializers
+from ecommerce.permissions import IsCliente
 
 class User_register(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
@@ -28,6 +29,24 @@ class User_update(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+    
+class Address_Viewsets(viewsets.ModelViewSet):
+    permission_classes = [IsCliente]
+    serializer_class = serializers.Address_Serializer
+    http_method_names = ['get', 'post', 'put', 'delete']
+
+    def get_queryset(self):
+        queryset = Address.objects.all()
+        user = self.request.user
+
+        if user.is_staff:
+            return queryset
+        
+        return queryset.filter(user=user) 
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
 
 class Forgot_Password(generics.GenericAPIView):
     permission_classes = [AllowAny]
