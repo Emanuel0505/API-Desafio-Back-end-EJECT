@@ -1,12 +1,17 @@
 from django_filters.rest_framework import DjangoFilterBackend
+from django.conf import settings
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, response, status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.decorators import action
+from rest_framework.throttling import ScopedRateThrottle
 
 from .models import *
 from .serializers import *
-from .permissions import IsLojista
+from .permissions import IsLojista, IsCliente
 from .fielters import Product_Filter
 
 class Category_Viewsets(viewsets.ModelViewSet):
@@ -57,13 +62,65 @@ class Stock_Viewsets(viewsets.ModelViewSet):
     ordering_fields = ['amount', 'color_name']
     search_fields = ['amount', '=color_name', '=size']
 
-
     def get_queryset(self):
         return Stock.objects.filter(product=self.kwargs['product_pk'])
     
     def perform_create(self, serializer):
         serializer.save(product_id=self.kwargs['product_pk'])
 
+
+class Contact_Support_email_viewset(viewsets.ModelViewSet):
+    permission_classes = [AllowAny]
+    queryset = contact_support_email.objects.all()
+    serializer_class = Contact_Support_email_Serializer
+    http_method_names = ['post']
+
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'contact_email'
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        self.perform_create(serializer)
+
+        name = serializer.data['name']
+        email = serializer.data['email']
+        subject = serializer.data['subject']
+        content = serializer.data['content']
+        
+
+        #template email
+        context = {
+            'name': name,
+            'email':email,
+            'content': content,
+        }
+
+        plain_message = strip_tags(render_to_string('message_template_contact_support_email.html', context))
+
+        #envio do email
+        try:
+            send_mail(
+                subject= subject,
+                message= plain_message,
+                from_email = settings.DEFAULT_FROM_EMAIL,
+                recipient_list=['newstylesupport@newstyle.com'],
+                fail_silently=False,
+            )
+            
+            return response.Response(
+                    {
+                        'menssage':
+                        'Sua solicitação foi enviada.'
+                    },
+                    status=status.HTTP_200_OK,
+                )
+        
+        except Exception as erro:
+            return response.Response(
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class Review_Viewsets(viewsets.ModelViewSet):
     queryset = Review.objects.all()

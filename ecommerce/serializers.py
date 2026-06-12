@@ -126,12 +126,43 @@ class Stock_Serializer(serializers.ModelSerializer):
             )
 
         return attrs
-        
-    
+
 class Review_Serializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = '__all__'
+class Contact_Support_email_Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = contact_support_email
+        fields = [
+           'email',
+           'name',
+           'subject',
+           'content', 
+        ]
+
+    def validate_name(self, value):
+        if not value.isalpha():
+            raise serializers.ValidationError('Nome: Não deve conter números e caracteres especiais.')
+        return value
+
+    def validate_subject(self, value):
+        if not len(value) <= 255:
+            raise serializers.ValidationError('Assunto: Deve conter no máximo 255 caracteres')
+        
+        if not len(value) >= 15:
+            raise serializers.ValidationError('Assunto: Deve conter no mínimo 15 caracteres')
+        
+        return value
+    
+    def validate_content(self, value):
+        if not len(value) >= 250: 
+            raise serializers.ValidationError('Conteudo: Deve conter no minimo 250 caracteres')
+        
+        if not len(value) <= 1500: 
+            raise serializers.ValidationError('Conteudo: Deve conter no máximo 1500 caracteres')
+        
+        return value
 
 class Address_Serializer(serializers.ModelSerializer):
     class Meta:
