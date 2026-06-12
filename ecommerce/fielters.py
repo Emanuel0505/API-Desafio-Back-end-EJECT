@@ -1,5 +1,5 @@
 import django_filters
-from .models import Product
+from .models import Product, Review
 
 class Product_Filter(django_filters.FilterSet):
     min_price = django_filters.NumberFilter(field_name="price", lookup_expr='gte')
@@ -19,4 +19,15 @@ class Product_Filter(django_filters.FilterSet):
             'title',
             'color',
             'size',
+        ]
+
+class Review_Filter(django_filters.FilterSet):
+    star = django_filters.NumberFilter(field_name='star', lookup_expr='iexact')
+
+    content = django_filters.CharFilter(lookup_expr='icontains')
+    class Meta:
+        model = Review
+        fields = [
+            'star',
+            'content',
         ]

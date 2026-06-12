@@ -60,11 +60,11 @@ class Stock(models.Model):
         return super().save(*args, **kwargs)
 
 class Review(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='review') 
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='review') 
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='review')
-    content = models.TextField()
-    star = models.PositiveSmallIntegerField(default=0, blank=False, null=False)
-    date_created = models.DateTimeField(default=timezone.now)
+    content = models.TextField(blank=True, null=True)
+    star = models.PositiveSmallIntegerField(blank=False, null=False)
+    created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return self.content

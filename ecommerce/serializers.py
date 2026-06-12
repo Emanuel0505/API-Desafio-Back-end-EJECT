@@ -26,6 +26,7 @@ class Product_Serializer(serializers.ModelSerializer):
 
     active = serializers.BooleanField(default=True)
     author = serializers.PrimaryKeyRelatedField(read_only=True)
+    created_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = Product
@@ -128,9 +129,27 @@ class Stock_Serializer(serializers.ModelSerializer):
         return attrs
 
 class Review_Serializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    product = serializers.PrimaryKeyRelatedField(read_only=True)
+    created_at = serializers.DateTimeField(read_only=True)
+
     class Meta:
         model = Review
-        fields = '__all__'
+        fields = [
+            'id',
+            'user',
+            'product',
+            'content',
+            'star',
+            'created_at',
+        ]
+    
+    def validate_star(self, value):
+        if not (value>=0 and value<=5):
+            raise serializers.ValidationError('Star: O valor deve estar entre 0 e 5.')
+        
+        return value
+
 class Contact_Support_email_Serializer(serializers.ModelSerializer):
     class Meta:
         model = contact_support_email

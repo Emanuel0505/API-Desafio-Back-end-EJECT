@@ -18,7 +18,7 @@ class Stockadmin(admin.ModelAdmin):
 
 @admin.register(Review)
 class Reviewadmin(admin.ModelAdmin):
-    list_display = ('user', 'product', 'content', 'star', 'date_created', )
+    list_display = ('user', 'product', 'content', 'star', 'created_at', )
 
 
     

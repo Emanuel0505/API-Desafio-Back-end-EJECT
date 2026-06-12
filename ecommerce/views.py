@@ -12,7 +12,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from .models import *
 from .serializers import *
 from .permissions import IsLojista, IsCliente
-from .fielters import Product_Filter
+from .fielters import Product_Filter, Review_Filter
 
 class Category_Viewsets(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -68,6 +68,30 @@ class Stock_Viewsets(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(product_id=self.kwargs['product_pk'])
 
+class Review_Viewsets(viewsets.ModelViewSet):
+    permission_classes = [IsCliente]
+    serializer_class = Review_Serializer
+    http_method_names = ['get', 'post']
+    queryset = Review.objects.all()
+
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+    
+    search_fields = ['content']
+    
+    filterset_class = Review_Filter
+
+    ordering_fields = ['star', 'created_at']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        return Review.objects.filter(product=self.kwargs['product_pk'])
+    
+    def perform_create(self, serializer):
+        serializer.save(
+            product_id=self.kwargs['product_pk'],
+            user=self.request.user,
+        )
+
 
 class Contact_Support_email_viewset(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
@@ -122,6 +146,4 @@ class Contact_Support_email_viewset(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-class Review_Viewsets(viewsets.ModelViewSet):
-    queryset = Review.objects.all()
-    serializer_class = Review_Serializer
+
