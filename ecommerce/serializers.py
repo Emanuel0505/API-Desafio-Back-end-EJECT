@@ -185,12 +185,20 @@ class Contact_Support_email_Serializer(serializers.ModelSerializer):
 
 class Cart_item_Serializer(serializers.ModelSerializer):
     product = Product_Serializer(many=False, read_only=True)
-    # Escrita: aceita apenas o id do produto
+    variations = Stock_Serializer(many=False, read_only=True)
+
+    # aceita apenas o id do produto
     product_id = serializers.PrimaryKeyRelatedField(
         queryset=Product.objects.all(),
         source='product',
         write_only=True
     )
+    variations_id = serializers.PrimaryKeyRelatedField(
+        queryset=Stock.objects.all(),
+        source='variations',
+        write_only=True,
+    )
+    
     subtotal = serializers.SerializerMethodField(method_name='sub_total')
 
     class Meta:
@@ -199,6 +207,8 @@ class Cart_item_Serializer(serializers.ModelSerializer):
             'id',
             'product',
             'product_id',
+            'variations',
+            'variations_id',
             'amount',
             'subtotal'
         ]
@@ -210,9 +220,19 @@ class Cart_item_Serializer(serializers.ModelSerializer):
         if value <=0:
             raise serializers.ValidationError('Quantidade:  Deve ser maior que 0')
         return value
+    
     def validate(self, attrs):
-        return super().validate(attrs)
+        
+        product = attrs.get('product')
+        variations = attrs.get('variations')
+        
+        if variations and product and variations.product_id != product.id:
+            raise serializers.ValidationError('Variação:  Não pertence ao produto informado')
+        
+        if variations and attrs.get('amount', 1) > variations.amount:
+            raise serializers.ValidationError(f'Estoque: Tem apenas {variations.amount} unidades disponivel.')
 
+        return attrs
 
 class Cart_Serializer(serializers.ModelSerializer):
     item = Cart_item_Serializer(many = True)

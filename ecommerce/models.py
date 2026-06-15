@@ -51,7 +51,7 @@ class Stock(models.Model):
     size = models.CharField(null= False, blank= False)
 
     def __str__(self):
-        return f'Product {self.product.title} and color {self.color_name}'
+        return f'Product {self.product.title}, color {self.color_name} and size {self.size}'
     
     def save(self, *args, **kwargs):
         self.color_name = self.color_name.lower()
@@ -85,6 +85,7 @@ class Cart(models.Model):
 class cart_item(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='item')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    variations = models.ForeignKey(Stock, on_delete=models.CASCADE, null=False, blank=False)
     amount = models.PositiveIntegerField(default=1)
 
     def __str__(self):
