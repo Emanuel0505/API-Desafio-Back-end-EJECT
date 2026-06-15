@@ -226,6 +226,9 @@ class Cart_item_Serializer(serializers.ModelSerializer):
         product = attrs.get('product')
         variations = attrs.get('variations')
         cart = self.context['view'].get_cart()
+
+        if product and not product.active:
+            raise serializers.ValidationError('Produto: Não está disponível para compra.')
         
         if variations and product and variations.product_id != product.id:
             raise serializers.ValidationError('Variação:  Não pertence ao produto informado')
