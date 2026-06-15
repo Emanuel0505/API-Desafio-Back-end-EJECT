@@ -3,7 +3,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.utils.text import slugify
 from colorfield.fields import ColorField
-from account.models import User
+from account.models import User, card
 import os
 
 class Category(models.Model):
@@ -77,7 +77,7 @@ class contact_support_email(models.Model):
 
 class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cart', blank=False, null=False)
-    date_update = models.DateTimeField(default=timezone.now())
+    date_update = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return f'Carrinho de {self.user}'
@@ -90,4 +90,46 @@ class cart_item(models.Model):
 
     def __str__(self):
         return f'Item: {self.product.title}'
+    
+class orders(models.Model):
+    STATUS_ORDERS = {
+        ('CREATED', 'CREATED / Awaiting Payment'),
+        ('PAID', 'Paid'),
+        ('SEPARATION', 'Separating'),
+        ('SENT', 'Sent'),
+        ('DELIVERED', 'Delivered'),
+        ('CANCELED', 'Canceled'),
+    }
+
+    user = models.ForeignKey(User, on_delete=models.PROTECT, blank=False, related_name= 'orders')
+    status = models.CharField(choices=STATUS_ORDERS, default='CREATED')
+    total_price = models.IntegerField(blank=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
+
+class Order_item(models.Model):
+    order = models.ForeignKey(orders, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    variations = models.ForeignKey(Stock, on_delete=models.PROTECT)
+    amount = models.PositiveIntegerField(default=1)
+    price = models.DecimalField(max_digits=9, decimal_places=2)
+
+    def __str__(self):
+        return f'{self.amount} x {self.product.price}'
+    
+class Payment(models.Model):
+    PAYMENT_TYPES = [
+        ('credit_card', 'Cartão de Crédito'),
+        ('debit_card', 'Cartão de Débito'),
+        ('pix', 'PIX'),
+        ('boleto', 'Boleto'),
+    ]
+
+    order = models.ForeignKey(orders, on_delete=models.CASCADE, related_name='payments')
+    Card = models.ForeignKey(card, on_delete=models.PROTECT, related_name='card', blank=True, null=True)
+    type = models.CharField(max_length=20, choices=PAYMENT_TYPES)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f'{self.order} the payment method {self.type}'
     

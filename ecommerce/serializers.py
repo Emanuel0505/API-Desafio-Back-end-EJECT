@@ -1,5 +1,8 @@
 from rest_framework import serializers
 
+from account.serializers import Card_Serializer
+from account.models import card 
+
 from .models import *
 from .validators import invalid_color_hexadecimal
 
@@ -262,5 +265,163 @@ class Cart_Serializer(serializers.ModelSerializer):
         items = cart.item.all()
         total = sum( item.amount * item.product.price for item in items)
         return total
+
+class Order_item_Serializer(serializers.ModelSerializer):
+    product = Product_Serializer(many=False, read_only=True)
+    variations = Stock_Serializer(many=False, read_only=True)
+    subtotal = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Order_item
+        fields = [
+            'id',
+            'product',
+            'variations',
+            'amount',
+            'price',
+            'subtotal',
+        ]
+
+    def get_subtotal(self, item):
+        return item.amount * item.price
     
-    
+class Payment_Serializer(serializers.ModelSerializer):
+    Card = Card_Serializer(many=False, read_only=True)
+    card_id = serializers.PrimaryKeyRelatedField(
+        queryset=card.objects.all(),
+        source='Card',
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+    class Meta:
+        model = Payment
+        fields = [
+            'id',
+            'type',
+            'Card',
+            'card_id',
+            'created_at',
+        ]
+        read_only_fields = ['created_at']
+
+    def validate(self, attrs):
+        payment_type = attrs.get('type')
+        card_obj = attrs.get('Card')
+
+        if payment_type in ['credit_card', 'debit_card'] and not card_obj:
+            raise serializers.ValidationError(
+                {'card_id': 'Cartão é obrigatório para pagamento com cartão.'}
+            )
+
+        if payment_type in ['pix', 'boleto'] and card_obj:
+            raise serializers.ValidationError(
+                {'card_id': 'PIX e Boleto não devem ter cartão associado.'}
+            )
+
+        request = self.context.get('request')
+        if card_obj and request and card_obj.user != request.user:
+            raise serializers.ValidationError(
+                {'card_id': 'Cartão não pertence ao usuário.'}
+            )
+
+        return attrs
+
+class Order_Serializer(serializers.ModelSerializer):
+    items = Order_item_Serializer(many=True, read_only=True)
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    payment = serializers.PrimaryKeyRelatedField(read_only=True)
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
+
+    cart_item_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True,
+        required=True
+    )
+    # payment_id = serializers.PrimaryKeyRelatedField(
+    #     queryset=Payment.objects.all(),
+    #     source='payment',
+    #     write_only=True,
+    #     required=True
+    # )
+
+    class Meta:
+        model = orders
+        fields = [
+            'id',
+            'user',
+            'payment',
+            'items',
+            'cart_item_ids',
+            'status',
+            'total_price',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['status', 'total_price', 'user',]
+
+    def validate_cart_item_ids(self, value):
+        if not value:
+            raise serializers.ValidationError('Selecione ao menos um item do carrinho.')
+        return value
+
+    def validate_payment_id(self, value):
+        # Garante que o pagamento pertence ao usuário
+        if value.user != self.context['request'].user:
+            raise serializers.ValidationError('Pagamento: Não pertence ao usuário.')
+        return value
+
+    def create(self, validated_data):
+        cart_item_ids = validated_data.pop('cart_item_ids')
+        user = self.context['request'].user
+
+        # Pega os itens do carrinho do usuário
+        cart_items = cart_item.objects.filter(
+            id__in=cart_item_ids,
+            cart__user=user
+        ).select_related('product', 'variations')
+
+        if not cart_items.exists():
+            raise serializers.ValidationError('Nenhum item válido encontrado no carrinho.')
+
+        # Valida que os produtos estão ativos
+        inactive = cart_items.filter(product__active=False)
+        if inactive.exists():
+            raise serializers.ValidationError(
+                'Existem produtos inativos no carrinho.'
+            )
+
+        # Valida estoque
+        for item in cart_items:
+            if item.amount > item.variations.amount:
+                raise serializers.ValidationError(
+                    f'Estoque insuficiente para {item.product.title} '
+                    f'({item.variations.color_name}/{item.variations.size}). '
+                    f'Disponível: {item.variations.amount}'
+                )
+
+        order = orders.objects.create(
+            user=user,
+            status='CREATED',
+            total_price= sum(item.amount * item.product.price for item in cart_items)
+        )
+
+        for cart_item_obj in cart_items:
+            order_item = Order_item.objects.create(
+                order=order,
+                product=cart_item_obj.product,
+                variations=cart_item_obj.variations,
+                amount=cart_item_obj.amount,
+                price=cart_item_obj.product.price
+            )
+            
+            cart_item_obj.variations.amount -= cart_item_obj.amount
+            cart_item_obj.variations.save()
+
+        # Remove do carrinho
+        cart_items.delete()
+
+        return order
+
+

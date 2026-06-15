@@ -168,8 +168,6 @@ class Cart_viewset(viewsets.ModelViewSet):
         cart, created = Cart.objects.get_or_create(user=request.user)
         serializer = self.get_serializer(cart)
         return Response(serializer.data)
-    
-
 
 class Cart_item_viewset(viewsets.ModelViewSet):
     permission_classes = [IsCliente, IsAuthenticated]
@@ -185,3 +183,46 @@ class Cart_item_viewset(viewsets.ModelViewSet):
         cart, created = Cart.objects.get_or_create(user=self.request.user)
         serializer.save(cart=cart)
     
+class Order_viewset(viewsets.ModelViewSet):
+    permission_classes = [IsCliente, IsAuthenticated]
+    serializer_class = Order_Serializer
+    http_method_names = ['get', 'post', 'patch']
+
+    def get_queryset(self):
+        user = self.request.user
+        # Admin vê tudo, usuário vê apenas seus pedidos
+        if user.is_staff:
+            return orders.objects.all()
+        return orders.objects.filter(user=user)
+
+    def perform_create(self, serializer):
+        # O user é pego do request, não do payload
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=['patch'])
+    def cancel(self, request, pk=None):
+        order = self.get_object()
+        if order.user != request.user and not request.user.is_staff:
+            return Response(
+                {'detail': 'Sem permissão para cancelar este pedido.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        if order.status not in ['pending']:
+            return Response(
+                {'detail': 'Apenas pedidos pendentes podem ser cancelados.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        order.status = 'canceled'
+        order.save()
+        return Response(self.get_serializer(order).data)
+
+class Payment_viewset(viewsets.ModelViewSet):
+    permission_classes = [IsCliente,IsAuthenticated]
+    serializer_class = Payment_Serializer
+    http_method_names = ['get', 'post', 'put', 'delete']
+    
+    def get_queryset(self):
+        return Payment.objects.filter(order=self.kwargs['order_pk'])
+    
+    def perform_create(self, serializer):
+        serializer.save(order_id=self.kwargs['order_pk'])
