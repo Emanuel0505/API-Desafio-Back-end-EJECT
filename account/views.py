@@ -16,26 +16,43 @@ from . import serializers
 from ecommerce.permissions import IsCustomer
 
 class User_register(viewsets.ModelViewSet):
+    """Register a new customer account.
+
+    Public endpoint used to create a user with the account serializer validation.
+    Supports only POST and returns the created user payload on success.
+    """
     permission_classes = [AllowAny]
     queryset = User.objects.all()
     serializer_class =  serializers.User_Serializer
     http_method_names = ['post']
 
 class User_update(generics.RetrieveUpdateAPIView):
+    """Retrieve and update the authenticated user's own profile.
+
+    Requires authentication. Supports GET, PUT, and PATCH against the current
+    user object returned by ``get_object``.
+    """
     permission_classes = {IsAuthenticated}
     queryset = User.objects.all()
     serializer_class = serializers.User_update_Serializer
     http_method_names = ['get', 'put', 'patch']
 
     def get_object(self):
+        """Return ``request.user`` so the route always targets the owner profile."""
         return self.request.user
     
 class Address_Viewsets(viewsets.ModelViewSet):
+    """Manage saved addresses for the authenticated customer.
+
+    Customers can create, update, list, and delete only their own addresses.
+    Staff users can see every address record when the queryset is evaluated.
+    """
     permission_classes = [IsCustomer]
     serializer_class = serializers.Address_Serializer
     http_method_names = ['get', 'post', 'put', 'delete']
 
     def get_queryset(self):
+        """List all addresses for staff or only the current customer's records."""
         queryset = Address.objects.all()
         user = self.request.user
 
@@ -45,14 +62,21 @@ class Address_Viewsets(viewsets.ModelViewSet):
         return queryset.filter(user=user) 
 
     def perform_create(self, serializer):
+        """Save the new address linked to the authenticated user."""
         serializer.save(user=self.request.user)
 
 
 class Forgot_Password(generics.GenericAPIView):
+    """Start the password reset flow by emailing a reset link.
+
+    Anonymous POST endpoint that accepts an email address, generates a token,
+    builds a reset URL, and sends the instructions by email when the user exists.
+    """
     permission_classes = [AllowAny]
     serializer_class = serializers.Email_Serializer
 
     def post(self, request):
+        """Validate the email, create the reset token, and send the email."""
         serializer = self.serializer_class(data=request.data)
         
         serializer.is_valid(raise_exception=True)
@@ -103,10 +127,16 @@ class Forgot_Password(generics.GenericAPIView):
             )
         
 class Reset_Password(generics.GenericAPIView):
+    """Complete the password reset flow using the token and encoded user id.
+
+    Anonymous PATCH endpoint that receives the password pair and uses the URL
+    token data to verify the user before saving the new password.
+    """
     permission_classes = [AllowAny]
     serializer_class =  serializers.Reset_Password_Serializer
 
     def patch(self, request, *args, **kwargs):
+        """Validate the reset token and persist the new password."""
         serializer = self.serializer_class(
             data = request.data, context = {'kwargs': kwargs}
         )
@@ -123,14 +153,21 @@ class Reset_Password(generics.GenericAPIView):
         )
     
 class Card_viewset(viewsets.ModelViewSet):
+    """Manage stored payment cards for the authenticated customer.
+
+    Authenticated customers can list, create, update, and delete only their own
+    cards. The user relation is injected automatically on create.
+    """
     permission_classes = [IsCustomer, IsAuthenticated]
     serializer_class = serializers.Card_Serializer
     http_method_names = ['get', 'post', 'put', 'delete']
 
     def get_queryset(self):
+        """Return only card records that belong to the current user."""
         queryset = card.objects.all()
         return queryset.filter(user=self.request.user)
     
     def perform_create(self, serializer):
+        """Attach the authenticated user to the card before saving it."""
         serializer.save(user=self.request.user)
     

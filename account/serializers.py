@@ -11,6 +11,12 @@ from .models import User, Address, card
 from .validators import *
 
 class User_Serializer(serializers.ModelSerializer):
+    """Serialize the public user registration payload.
+
+    This serializer backs the registration endpoint documented in the API
+    guide. It validates email, CPF, phone, password strength, password
+    confirmation, full name, and date of birth before creating the user.
+    """
     password_confirm = serializers.CharField(write_only=True)
 
     class Meta:
@@ -32,9 +38,11 @@ class User_Serializer(serializers.ModelSerializer):
         }
 
     def validate_password(self, value):
+        """Enforce the shared password policy used across authentication flows."""
         return validate_password_unique(value)
 
     def validate_date_of_birth(self, value):
+        """Require a valid birth date and a minimum age of 18 years."""
         if value == None:
             raise serializers.ValidationError('Date of birth: The field cannot be blank.')
 
@@ -47,7 +55,8 @@ class User_Serializer(serializers.ModelSerializer):
         return value
 
     def validate_fullname(self, value):
-        
+        """Require a name with only letters and at least three characters."""
+
         if name_invalid(value):
             raise serializers.ValidationError('Name: Should not contain numbers and special characters.')
         
@@ -57,6 +66,7 @@ class User_Serializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
+        """Validate CPF, phone format, and password confirmation together."""
 
         if cpf_invalid(attrs['cpf']):
             raise serializers.ValidationError('CPF: Must contain a valid value')
@@ -71,9 +81,7 @@ class User_Serializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        """
-        User creation
-        """
+        """Create the user after removing the confirmation password field."""
 
         validated_data.pop('password_confirm', None)
 
@@ -82,6 +90,7 @@ class User_Serializer(serializers.ModelSerializer):
         return user
     
     def update(self, instance, validated_data):
+        """Update user profile fields and reset the password when provided."""
         validated_data.pop('password_confirm', None)
         
         password = validated_data.pop('password', None)
@@ -95,6 +104,7 @@ class User_Serializer(serializers.ModelSerializer):
         return instance
 
 class User_update_Serializer(serializers.ModelSerializer):
+    """Serialize the authenticated user's profile update payload."""
     password_confirm = serializers.CharField(write_only=True)
 
     class Meta:
@@ -113,6 +123,7 @@ class User_update_Serializer(serializers.ModelSerializer):
 
         }
     def update(self, instance, validated_data):
+        """Apply profile changes and update the password when requested."""
         validated_data.pop('password_confirm', None)
         
         password = validated_data.pop('password', None)
@@ -126,6 +137,7 @@ class User_update_Serializer(serializers.ModelSerializer):
         return instance
 
 class Address_Serializer(serializers.ModelSerializer):
+    """Serialize customer addresses and validate CEP, state, and number fields."""
 
     user = serializers.PrimaryKeyRelatedField(read_only=True)
     class Meta:
@@ -142,7 +154,8 @@ class Address_Serializer(serializers.ModelSerializer):
         ]
 
     def validate_cep(self, value):
-        
+        """Validate the CEP against the external BrasilAPI lookup."""
+
         url = f'https://brasilapi.com.br/api/cep/v1/{value}'
         response = requests.get(url)
 
@@ -158,6 +171,7 @@ class Address_Serializer(serializers.ModelSerializer):
         return value
     
     def validate_name(self, value):
+        """Require an address label made only of letters and up to 50 chars."""
         if not value.isalpha():
             raise serializers.ValidationError('Name: Should not contain numbers and special characters')
 
@@ -167,6 +181,7 @@ class Address_Serializer(serializers.ModelSerializer):
         return value
         
     def validate_state(self, value):
+        """Require a two-letter state abbreviation composed only of letters."""
         if not len(value) == 2:
             raise serializers.ValidationError('State: Provide the abbreviation')
         
@@ -176,18 +191,21 @@ class Address_Serializer(serializers.ModelSerializer):
         return value
     
     def validate_number(self, value):
+        """Require the street number to contain digits only."""
         if not value.isdigit():
             raise serializers.ValidationError('Number: Should not contain letters and special characters')
 
         return value
 
 class Email_Serializer(serializers.Serializer):
+    """Serialize the email payload used to start the password reset flow."""
     email = serializers.EmailField(required=True)
 
     class Meta:
         fields = ('email',)
 
 class Reset_Password_Serializer(serializers.Serializer):
+    """Validate the password reset payload and consume the reset token."""
     password = serializers.CharField(write_only = True)
     confirm_password = serializers.CharField(write_only = True)
 
@@ -195,9 +213,11 @@ class Reset_Password_Serializer(serializers.Serializer):
         fields = ('password','confirm_password',)
 
     def validate_password(self, value):
+        """Apply the same password policy used in registration."""
         return validate_password_unique(value)
     
     def validate(self, attrs):
+        """Confirm password equality and validate the token context."""
         if not attrs['password'] == attrs['confirm_password']:
             raise serializers.ValidationError('Passwords do not match')
         else:
@@ -219,6 +239,7 @@ class Reset_Password_Serializer(serializers.Serializer):
         return attrs
 
 class Card_Serializer(serializers.ModelSerializer):
+    """Serialize stored payment cards for the authenticated user."""
     user = serializers.PrimaryKeyRelatedField(read_only=True)
     class Meta:
         model = card
@@ -233,18 +254,21 @@ class Card_Serializer(serializers.ModelSerializer):
         ]
 
     def validate_surname(self, value):
+        """Require a card brand name made only of letters."""
         if not value.isalpha():
             raise serializers.ValidationError('Surname: without special characters and numbers.')
 
         return value
     
     def validate_number(self,value):
+        """Require a card number in the grouped 16-digit format."""
         if number_card_invalid(value):
             raise serializers.ValidationError('Number: Follow the pattern 0000 0000 0000 0000')
 
         return value
     
     def validate_name(self, value):
+        """Require the cardholder name to be alphabetic and within length limits."""
         if name_invalid(value):
             raise serializers.ValidationError('Name: Should not contain special characters and numbers.')
         
@@ -254,6 +278,7 @@ class Card_Serializer(serializers.ModelSerializer):
         return value
     
     def validate_cvv(self, value):
+        """Require a three-digit CVV code."""
         if not value.isdigit():
             raise serializers.ValidationError('CVV: Should contain only numbers.')
 
