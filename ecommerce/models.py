@@ -18,7 +18,7 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=9,decimal_places=2, blank= False, null=False, default=100)
     category = models.ForeignKey(Category, blank=False, null= False, on_delete=models.PROTECT)
     active = models.BooleanField(default=True)
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='products')
+    shopkeeper = models.ForeignKey(User, on_delete=models.CASCADE, related_name='products')
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
@@ -91,4 +91,3 @@ class cart_item(models.Model):
     def __str__(self):
         return f'Item: {self.product.title}'
     
-

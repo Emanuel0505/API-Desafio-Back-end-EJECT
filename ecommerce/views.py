@@ -47,12 +47,12 @@ class Product_Viewsets(viewsets.ModelViewSet):
             return queryset
         
         if getattr(user, 'usertype', None) == 'L':
-            return queryset.filter(author=user)
+            return queryset.filter(shopkeeper=user)
 
         return queryset.filter(active=True)
     
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        serializer.save(shopkeeper=self.request.user)
 
 
 class Stock_Viewsets(viewsets.ModelViewSet):

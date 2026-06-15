@@ -25,7 +25,7 @@ class Product_Serializer(serializers.ModelSerializer):
 
 
     active = serializers.BooleanField(default=True)
-    author = serializers.PrimaryKeyRelatedField(read_only=True)
+    shopkeeper = serializers.PrimaryKeyRelatedField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
@@ -39,11 +39,11 @@ class Product_Serializer(serializers.ModelSerializer):
             'upload_images',
             'images',
             'active',
-            'author',
+            'shopkeeper',
             'created_at'
         ]
         extra_kwards = {
-            'author': {'write_only': False},
+            'shopkeeper': {'write_only': False},
             'created_at': {'write_only': False},
         }
     
@@ -225,12 +225,20 @@ class Cart_item_Serializer(serializers.ModelSerializer):
         
         product = attrs.get('product')
         variations = attrs.get('variations')
+        cart = self.context['view'].get_cart()
         
         if variations and product and variations.product_id != product.id:
             raise serializers.ValidationError('Variação:  Não pertence ao produto informado')
         
         if variations and attrs.get('amount', 1) > variations.amount:
             raise serializers.ValidationError(f'Estoque: Tem apenas {variations.amount} unidades disponivel.')
+
+        if cart and product:
+            existing_items = cart.item.exclude(product=product).select_related('product')
+            for item in existing_items:
+                if item.product.shopkeeper_id != product.shopkeeper_id:
+                    raise serializers.ValidationError(f'Não pode adicionar produtos de lojistas diferentes \n No carrinho existe produtos do lojista {item.product.shopkeeper}')
+                    
 
         return attrs
 

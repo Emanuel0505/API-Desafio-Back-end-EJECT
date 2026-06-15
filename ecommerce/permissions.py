@@ -21,7 +21,7 @@ class IsLojista(BasePermission):
         
         return bool(
             request.user.is_staff or 
-            (hasattr(obj, 'author') and obj.author == request.user)
+            (hasattr(obj, 'shopkeeper') and obj.shopkeeper == request.user)
         ) 
 
 class IsCliente(BasePermission):
