@@ -1,7 +1,7 @@
 from rest_framework import serializers
 import re
 from validate_docbr import CPF
-from datetime import date
+from datetime import date, datetime
 
 def cpf_invalid(cpf_number):
     cpf = CPF()
@@ -11,6 +11,11 @@ def cpf_invalid(cpf_number):
 def phone_invalid(phone):
     model = '[0-9]{2} [0-9] [0-9]{4}-[0-9]{4}'
     response = re.findall(model,phone)
+    return not response
+
+def name_invalid(name):
+    model = r"^[A-za-zÀ-ü'.\s]+$"
+    response = re.findall(model, name)
     return not response
 
 def date_of_birth_invalid_age(value):
@@ -47,3 +52,29 @@ def validate_password_unique(value):
         raise serializers.ValidationError('Senha: Deve conter no minimo 1 número.')
     
     return value
+
+def number_card_invalid(num):
+    model = '[0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4}'
+    response = re.findall(model, num)
+    return not response
+
+def date_invalid(date):
+    model = r"^(0[1-9]|1[0-2])[/][0-9]{2}$"
+    response = re.findall(model, date)
+    return not response
+
+def expired_date_invalid(date):
+    month, year  = re.split(r'/', date)
+
+    month = int(month)
+    year = int(f'20{year}')
+
+    date_exp = datetime(year,month,1)
+
+    #data expirada
+    if datetime.now() >= date_exp:
+        return True
+    
+    #data não expirada
+    return False
+        

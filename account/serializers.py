@@ -7,7 +7,7 @@ from datetime import date
 import re
 import requests
 
-from .models import User, Address
+from .models import User, Address, card
 from .validators import *
 
 class User_Serializer(serializers.ModelSerializer):
@@ -48,7 +48,7 @@ class User_Serializer(serializers.ModelSerializer):
 
     def validate_fullname(self, value):
         
-        if not value.isalpha():
+        if name_invalid(value):
             raise serializers.ValidationError('Nome: Não deve conter números e caracteres especiais.')
         
         if len(value) < 3:
@@ -180,11 +180,6 @@ class Address_Serializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Number: Não deve conter letras e caracteres especiais')
 
         return value
-                
-
-
-
-
 
 class Email_Serializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
@@ -222,4 +217,64 @@ class Reset_Password_Serializer(serializers.Serializer):
             user.set_password(password)
             user.save()
         return attrs
+
+class Card_Serializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    class Meta:
+        model = card
+        fields = [
+            'id',
+            'user',
+            'surname',
+            'number',
+            'name',
+            'cvv',
+            'validity_date',
+        ]
+
+    def validate_surname(self, value):
+        if not value.isalpha():
+            raise serializers.ValidationError('Surname: sem caracteres especiais e numeros.')
+
+        return value
     
+    def validate_number(self,value):
+        if number_card_invalid(value):
+            raise serializers.ValidationError('Number: Seguir o modelo 0000 0000 0000 0000')
+
+        return value
+    
+    def validate_name(self, value):
+        if name_invalid(value):
+            raise serializers.ValidationError('Name: Não deve conter caracteres especias e números.')
+        
+        if not len(value)<=26:
+            raise serializers.ValidationError('Name: Não deve conter até 26 caracteres.')
+
+        return value
+    
+    def validate_cvv(self, value):
+        if not value.isdigit():
+            raise serializers.ValidationError('CVV: Não deve conter apenas número.')
+
+        if not len(value) == 3:
+            raise serializers.ValidationError('CVV: Não deve conter 3 digitos.')
+
+        return value
+
+    def validate_validity_date(self, value):
+        if date_invalid(value):
+            raise serializers.ValidationError('Date: Seguir o modelo 00/00')
+        
+        if expired_date_invalid(value):
+            raise serializers.ValidationError('Date: Data do cartão espirado')
+        
+        return value
+
+    
+
+
+    
+
+
+        

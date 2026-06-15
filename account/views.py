@@ -11,7 +11,7 @@ from rest_framework import viewsets, generics, status, response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 
-from .models import User, Address
+from .models import User, Address, card
 from . import serializers
 from ecommerce.permissions import IsCliente
 
@@ -121,3 +121,16 @@ class Reset_Password(generics.GenericAPIView):
             status=status.HTTP_200_OK,
 
         )
+    
+class Card_viewset(viewsets.ModelViewSet):
+    permission_classes = [IsCliente, IsAuthenticated]
+    serializer_class = serializers.Card_Serializer
+    http_method_names = ['get', 'post', 'put', 'delete']
+
+    def get_queryset(self):
+        queryset = card.objects.all()
+        return queryset.filter(user=self.request.user)
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+    

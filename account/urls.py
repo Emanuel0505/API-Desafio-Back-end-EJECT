@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import User_register, User_update, Address_Viewsets, Forgot_Password, Reset_Password
+from .views import *
 from rest_framework_nested import routers
 
 
@@ -8,6 +8,7 @@ router.register('register', User_register, basename='Users')
 
 router_user = routers.DefaultRouter()
 router_user.register('address', Address_Viewsets, basename='Address')
+router_user.register('card', Card_viewset, basename='Card')
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -62,3 +62,14 @@ class Address(models.Model):
     
     def __str__(self):
         return self.cep
+    
+class card(models.Model):
+    user  = models.ForeignKey(User, on_delete=models.CASCADE, related_name='card')
+    surname = models.CharField(blank=False)
+    number = models.CharField(blank=False, null=None)
+    name = models.CharField(blank=False, null=False)
+    cvv = models.CharField(blank=False, null=None)
+    validity_date = models.CharField(blank=False, null=None)
+
+    def __str__(self):
+        return f"Card {self.surname}"
