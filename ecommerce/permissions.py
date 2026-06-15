@@ -1,8 +1,8 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
-class IsLojista(BasePermission):
+class IsShopkeeper(BasePermission):
     """
-    Permissão customizada para Lojista
+    Custom permission for Shopkeeper
     """
 
     def has_permission(self, request, view):
@@ -24,9 +24,9 @@ class IsLojista(BasePermission):
             (hasattr(obj, 'shopkeeper') and obj.shopkeeper == request.user)
         ) 
 
-class IsCliente(BasePermission):
+class IsCustomer(BasePermission):
     """
-    Permissão customizada para clientes
+    Custom permission for customers
     """
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:

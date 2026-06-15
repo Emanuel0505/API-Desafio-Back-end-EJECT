@@ -13,18 +13,18 @@ from rest_framework.throttling import ScopedRateThrottle
 
 from .models import *
 from .serializers import *
-from .permissions import IsLojista, IsCliente
+from .permissions import IsShopkeeper, IsCustomer
 from .fielters import Product_Filter, Review_Filter
 
 class Category_Viewsets(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = Category_Serializer
-    permission_classes = [IsLojista]
+    permission_classes = [IsShopkeeper]
     http_method_names = ['get', 'post', 'put', 'patch']
 
 class Product_Viewsets(viewsets.ModelViewSet):
     serializer_class = Product_Serializer
-    permission_classes = [IsLojista]
+    permission_classes = [IsShopkeeper]
     http_method_names = ['get', 'post', 'put', 'patch', 'delete']
 
     #filter
@@ -42,7 +42,7 @@ class Product_Viewsets(viewsets.ModelViewSet):
         
         queryset = Product.objects.all().distinct()
 
-        #para admins
+        # for admins
         if user.is_staff:
             return queryset
         
@@ -56,7 +56,7 @@ class Product_Viewsets(viewsets.ModelViewSet):
 
 
 class Stock_Viewsets(viewsets.ModelViewSet):
-    permission_classes = [IsLojista]
+    permission_classes = [IsShopkeeper]
     queryset = Stock.objects.all().order_by('amount')
     serializer_class = Stock_Serializer
 
@@ -71,7 +71,7 @@ class Stock_Viewsets(viewsets.ModelViewSet):
         serializer.save(product_id=self.kwargs['product_pk'])
 
 class Review_Viewsets(viewsets.ModelViewSet):
-    permission_classes = [IsCliente]
+    permission_classes = [IsShopkeeper]
     serializer_class = Review_Serializer
     http_method_names = ['get', 'post']
     queryset = Review.objects.all()
@@ -125,7 +125,7 @@ class Contact_Support_email_viewset(viewsets.ModelViewSet):
 
         plain_message = strip_tags(render_to_string('message_template_contact_support_email.html', context))
 
-        #envio do email
+        # send email
         try:
             send_mail(
                 subject= subject,
@@ -137,8 +137,8 @@ class Contact_Support_email_viewset(viewsets.ModelViewSet):
             
             return response.Response(
                     {
-                        'menssage':
-                        'Sua solicitação foi enviada.'
+                        'message':
+                        'Your request has been sent.'
                     },
                     status=status.HTTP_200_OK,
                 )
@@ -149,7 +149,7 @@ class Contact_Support_email_viewset(viewsets.ModelViewSet):
             )
 
 class Cart_viewset(viewsets.ModelViewSet):
-    permission_classes = [IsCliente, IsAuthenticated]
+    permission_classes = [IsCustomer, IsAuthenticated]
     serializer_class = Cart_Serializer
     http_method_names = ['get']
 
@@ -170,7 +170,7 @@ class Cart_viewset(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 class Cart_item_viewset(viewsets.ModelViewSet):
-    permission_classes = [IsCliente, IsAuthenticated]
+    permission_classes = [IsCustomer, IsAuthenticated]
     serializer_class = Cart_item_Serializer
     http_method_names = ['post', 'put', 'delete']
     queryset = cart_item.objects.all()
@@ -184,19 +184,19 @@ class Cart_item_viewset(viewsets.ModelViewSet):
         serializer.save(cart=cart)
     
 class Order_viewset(viewsets.ModelViewSet):
-    permission_classes = [IsCliente, IsAuthenticated]
+    permission_classes = [IsCustomer, IsAuthenticated]
     serializer_class = Order_Serializer
     http_method_names = ['get', 'post', 'patch']
 
     def get_queryset(self):
         user = self.request.user
-        # Admin vê tudo, usuário vê apenas seus pedidos
+        # Admin sees everything, user sees only their orders
         if user.is_staff:
             return orders.objects.all()
         return orders.objects.filter(user=user)
 
     def perform_create(self, serializer):
-        # O user é pego do request, não do payload
+        # User is taken from the request, not from the payload
         serializer.save(user=self.request.user)
 
     @action(detail=True, methods=['patch'])
@@ -204,12 +204,12 @@ class Order_viewset(viewsets.ModelViewSet):
         order = self.get_object()
         if order.user != request.user and not request.user.is_staff:
             return Response(
-                {'detail': 'Sem permissão para cancelar este pedido.'},
+                {'detail': 'No permission to cancel this order.'},
                 status=status.HTTP_403_FORBIDDEN
             )
         if order.status not in ['pending']:
             return Response(
-                {'detail': 'Apenas pedidos pendentes podem ser cancelados.'},
+                {'detail': 'Only pending orders can be canceled.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         order.status = 'canceled'
@@ -217,7 +217,7 @@ class Order_viewset(viewsets.ModelViewSet):
         return Response(self.get_serializer(order).data)
 
 class Payment_viewset(viewsets.ModelViewSet):
-    permission_classes = [IsCliente,IsAuthenticated]
+    permission_classes = [IsCustomer,IsAuthenticated]
     serializer_class = Payment_Serializer
     http_method_names = ['get', 'post', 'put', 'delete']
     

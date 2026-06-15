@@ -17,7 +17,7 @@ class Images_product_Serializer(serializers.ModelSerializer):
         fields = ['id', 'product', 'image']
 
 class Product_Serializer(serializers.ModelSerializer):
-    #campo para receber diversa imagens de uma vez
+    # field to receive multiple images at once
     upload_images = serializers.ListField(
         child=serializers.ImageField(
             allow_empty_file=False,
@@ -52,19 +52,19 @@ class Product_Serializer(serializers.ModelSerializer):
     
     def validate_title(self, value):
         if not len(value)<150:
-            raise serializers.ValidationError('Titulo: deve conter menos de 150 caracteres.') 
+            raise serializers.ValidationError('Title: must have less than 150 characters.') 
         return value
         
     def validate_price(self, value):
         if not value > 0.01: 
-            raise serializers.ValidationError('Preço: Não pode ser negativo.')
+            raise serializers.ValidationError('Price: Cannot be negative or zero.')
 
 
     def create(self, validated_data):
         upload_images = validated_data.pop('upload_images')
         product = Product.objects.create(**validated_data)
 
-        #salva as imagens no model de Images_product
+        # saves images to the Images_product model
         for image in upload_images:
             Images_product.objects.create(product=product, image=image)
         
@@ -89,21 +89,21 @@ class Stock_Serializer(serializers.ModelSerializer):
     def validate_color_name(self, value):
 
         if not value.isalpha():
-            raise serializers.ValidationError('Color_name: Não deve conter números e caracteres especiais.')
+            raise serializers.ValidationError('Color name: Should not contain numbers and special characters.')
         
         return value
 
     def validate_color_hexadecimal(self, value):
         
         if invalid_color_hexadecimal(value):
-            raise serializers.ValidationError('Color_hexadecimal: Deve seguir o modelo #FFF ou #FFFFFF.')
+            raise serializers.ValidationError('Color hexadecimal: Must follow the pattern #FFF or #FFFFFF.')
         
         return value
     
     def validate_amount(self, value):
         
         if not value >= 0 :
-            raise serializers.ValidationError('Amount: Não pode ser negativo.')
+            raise serializers.ValidationError('Amount: Cannot be negative.')
         
         return value
     
@@ -120,13 +120,13 @@ class Stock_Serializer(serializers.ModelSerializer):
 
         variation_id = self.instance.id if self.instance else None
 
-        # No PUT/PATCH, ignora o próprio registro
+        # On PUT/PATCH, ignores the own record
         if variation_id:
             query = query.exclude(id=variation_id)
 
         if query.exists():
             raise serializers.ValidationError(
-                'Variação: Já existe um stock registrado com essa cor e tamanho neste produto'
+                'Variation: There is already a stock registered with this color and size for this product'
             )
 
         return attrs
@@ -149,7 +149,7 @@ class Review_Serializer(serializers.ModelSerializer):
     
     def validate_star(self, value):
         if not (value>=0 and value<=5):
-            raise serializers.ValidationError('Star: O valor deve estar entre 0 e 5.')
+            raise serializers.ValidationError('Star: The value must be between 0 and 5.')
         
         return value
 
@@ -165,24 +165,24 @@ class Contact_Support_email_Serializer(serializers.ModelSerializer):
 
     def validate_name(self, value):
         if not value.isalpha():
-            raise serializers.ValidationError('Nome: Não deve conter números e caracteres especiais.')
+            raise serializers.ValidationError('Name: Should not contain numbers and special characters.')
         return value
 
     def validate_subject(self, value):
         if not len(value) <= 255:
-            raise serializers.ValidationError('Assunto: Deve conter no máximo 255 caracteres')
+            raise serializers.ValidationError('Subject: Must have a maximum of 255 characters')
         
         if not len(value) >= 15:
-            raise serializers.ValidationError('Assunto: Deve conter no mínimo 15 caracteres')
+            raise serializers.ValidationError('Subject: Must have a minimum of 15 characters')
         
         return value
     
     def validate_content(self, value):
         if not len(value) >= 250: 
-            raise serializers.ValidationError('Conteudo: Deve conter no minimo 250 caracteres')
+            raise serializers.ValidationError('Content: Must have a minimum of 250 characters')
         
         if not len(value) <= 1500: 
-            raise serializers.ValidationError('Conteudo: Deve conter no máximo 1500 caracteres')
+            raise serializers.ValidationError('Content: Must have a maximum of 1500 characters')
         
         return value
 
@@ -190,7 +190,7 @@ class Cart_item_Serializer(serializers.ModelSerializer):
     product = Product_Serializer(many=False, read_only=True)
     variations = Stock_Serializer(many=False, read_only=True)
 
-    # aceita apenas o id do produto
+    # accepts only the product id
     product_id = serializers.PrimaryKeyRelatedField(
         queryset=Product.objects.all(),
         source='product',
@@ -221,7 +221,7 @@ class Cart_item_Serializer(serializers.ModelSerializer):
     
     def validate_amount(self, value):
         if value <=0:
-            raise serializers.ValidationError('Quantidade:  Deve ser maior que 0')
+            raise serializers.ValidationError('Amount: Must be greater than 0')
         return value
     
     def validate(self, attrs):
@@ -231,19 +231,19 @@ class Cart_item_Serializer(serializers.ModelSerializer):
         cart = self.context['view'].get_cart()
 
         if product and not product.active:
-            raise serializers.ValidationError('Produto: Não está disponível para compra.')
+            raise serializers.ValidationError('Product: Is not available for purchase.')
         
         if variations and product and variations.product_id != product.id:
-            raise serializers.ValidationError('Variação:  Não pertence ao produto informado')
+            raise serializers.ValidationError('Variation: Does not belong to the informed product')
         
         if variations and attrs.get('amount', 1) > variations.amount:
-            raise serializers.ValidationError(f'Estoque: Tem apenas {variations.amount} unidades disponivel.')
+            raise serializers.ValidationError(f'Stock: Only {variations.amount} units available.')
 
         if cart and product:
             existing_items = cart.item.exclude(product=product).select_related('product')
             for item in existing_items:
                 if item.product.shopkeeper_id != product.shopkeeper_id:
-                    raise serializers.ValidationError(f'Não pode adicionar produtos de lojistas diferentes \n No carrinho existe produtos do lojista {item.product.shopkeeper}')
+                    raise serializers.ValidationError(f'Cannot add products from different shopkeepers. \n The cart contains products from shopkeeper {item.product.shopkeeper}')
                     
 
         return attrs
@@ -311,18 +311,18 @@ class Payment_Serializer(serializers.ModelSerializer):
 
         if payment_type in ['credit_card', 'debit_card'] and not card_obj:
             raise serializers.ValidationError(
-                {'card_id': 'Cartão é obrigatório para pagamento com cartão.'}
+                {'card_id': 'Card is required for card payment.'}
             )
 
         if payment_type in ['pix', 'boleto'] and card_obj:
             raise serializers.ValidationError(
-                {'card_id': 'PIX e Boleto não devem ter cartão associado.'}
+                {'card_id': 'PIX and Boleto should not have a card associated.'}
             )
 
         request = self.context.get('request')
         if card_obj and request and card_obj.user != request.user:
             raise serializers.ValidationError(
-                {'card_id': 'Cartão não pertence ao usuário.'}
+                {'card_id': 'Card does not belong to the user.'}
             )
 
         return attrs
@@ -363,42 +363,42 @@ class Order_Serializer(serializers.ModelSerializer):
 
     def validate_cart_item_ids(self, value):
         if not value:
-            raise serializers.ValidationError('Selecione ao menos um item do carrinho.')
+            raise serializers.ValidationError('Select at least one item from the cart.')
         return value
 
     def validate_payment_id(self, value):
-        # Garante que o pagamento pertence ao usuário
+        # Ensures that the payment belongs to the user
         if value.user != self.context['request'].user:
-            raise serializers.ValidationError('Pagamento: Não pertence ao usuário.')
+            raise serializers.ValidationError('Payment: Does not belong to the user.')
         return value
 
     def create(self, validated_data):
         cart_item_ids = validated_data.pop('cart_item_ids')
         user = self.context['request'].user
 
-        # Pega os itens do carrinho do usuário
+        # Gets the items from the user's cart
         cart_items = cart_item.objects.filter(
             id__in=cart_item_ids,
             cart__user=user
         ).select_related('product', 'variations')
 
         if not cart_items.exists():
-            raise serializers.ValidationError('Nenhum item válido encontrado no carrinho.')
+            raise serializers.ValidationError('No valid items found in the cart.')
 
-        # Valida que os produtos estão ativos
+        # Validates that products are active
         inactive = cart_items.filter(product__active=False)
         if inactive.exists():
             raise serializers.ValidationError(
-                'Existem produtos inativos no carrinho.'
+                'There are inactive products in the cart.'
             )
 
-        # Valida estoque
+        # Validates stock
         for item in cart_items:
             if item.amount > item.variations.amount:
                 raise serializers.ValidationError(
-                    f'Estoque insuficiente para {item.product.title} '
+                    f'Insufficient stock for {item.product.title} '
                     f'({item.variations.color_name}/{item.variations.size}). '
-                    f'Disponível: {item.variations.amount}'
+                    f'Available: {item.variations.amount}'
                 )
 
         order = orders.objects.create(
@@ -419,7 +419,7 @@ class Order_Serializer(serializers.ModelSerializer):
             cart_item_obj.variations.amount -= cart_item_obj.amount
             cart_item_obj.variations.save()
 
-        # Remove do carrinho
+        # Removes from cart
         cart_items.delete()
 
         return order

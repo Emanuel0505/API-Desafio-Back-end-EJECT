@@ -36,43 +36,43 @@ class User_Serializer(serializers.ModelSerializer):
 
     def validate_date_of_birth(self, value):
         if value == None:
-            raise serializers.ValidationError('Data de Nascimento: O campo não pode estar em branco.')
+            raise serializers.ValidationError('Date of birth: The field cannot be blank.')
 
         if value > date.today():
-            raise serializers.ValidationError('Data de Nascimento: Não pode ser uma data futura.')
+            raise serializers.ValidationError('Date of birth: Cannot be a future date.')
         
         if date_of_birth_invalid_age(value):
-            raise serializers.ValidationError('Data de Nascimento: Ter no mínimo 18 anos.')
+            raise serializers.ValidationError('Date of birth: Must be at least 18 years old.')
         
         return value
 
     def validate_fullname(self, value):
         
         if name_invalid(value):
-            raise serializers.ValidationError('Nome: Não deve conter números e caracteres especiais.')
+            raise serializers.ValidationError('Name: Should not contain numbers and special characters.')
         
         if len(value) < 3:
-            raise serializers.ValidationError('Name: Ter no mínimo 3 letras.')
+            raise serializers.ValidationError('Name: Must have at least 3 letters.')
         
         return value
 
     def validate(self, attrs):
 
         if cpf_invalid(attrs['cpf']):
-            raise serializers.ValidationError('CPF: Deve conter um valor válido')
+            raise serializers.ValidationError('CPF: Must contain a valid value')
         
         if phone_invalid(attrs['phone']):
-            raise serializers.ValidationError('Celular: Seguir o modelo (84) 9 9999-9999')
+            raise serializers.ValidationError('Phone: Follow the pattern (84) 9 9999-9999')
         
         if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError('password_confirm: Senhas não coincidem')
+            raise serializers.ValidationError('password_confirm: Passwords do not match')
             
 
         return attrs
 
     def create(self, validated_data):
         """
-        Criação do Usuario 
+        User creation
         """
 
         validated_data.pop('password_confirm', None)
@@ -147,37 +147,37 @@ class Address_Serializer(serializers.ModelSerializer):
         response = requests.get(url)
 
         if response.status_code == 400:
-            raise serializers.ValidationError('CEP deve conter 8 digitos')
+            raise serializers.ValidationError('CEP must contain 8 digits')
 
         if response.status_code == 404:    
-            raise serializers.ValidationError('CEP não encontrado')
+            raise serializers.ValidationError('CEP not found')
         
         if response.status_code == 500:
-            raise serializers.ValidationError('CEP: Erro ao consultar o CEP')
+            raise serializers.ValidationError('CEP: Error when querying the CEP')
 
         return value
     
     def validate_name(self, value):
         if not value.isalpha():
-            raise serializers.ValidationError('Nome: Não deve conter numeros e caracteres especiais')
+            raise serializers.ValidationError('Name: Should not contain numbers and special characters')
 
         if not len(value) <=50:
-            raise serializers.ValidationError('Nome: Maximo de 50 caracteres')
+            raise serializers.ValidationError('Name: Maximum of 50 characters')
         
         return value
         
     def validate_state(self, value):
         if not len(value) == 2:
-            raise serializers.ValidationError('Estado: Informar UF')
+            raise serializers.ValidationError('State: Provide the abbreviation')
         
         if not value.isalpha():
-            raise serializers.ValidationError('Estado: Não deve conter numeros e caracteres especiais')
+            raise serializers.ValidationError('State: Should not contain numbers and special characters')
 
         return value
     
     def validate_number(self, value):
         if not value.isdigit():
-            raise serializers.ValidationError('Number: Não deve conter letras e caracteres especiais')
+            raise serializers.ValidationError('Number: Should not contain letters and special characters')
 
         return value
 
@@ -199,7 +199,7 @@ class Reset_Password_Serializer(serializers.Serializer):
     
     def validate(self, attrs):
         if not attrs['password'] == attrs['confirm_password']:
-            raise serializers.ValidationError('As senhas não coicidem')
+            raise serializers.ValidationError('Passwords do not match')
         else:
             password = attrs.get('password')
             token = self.context.get('kwargs').get('token')
@@ -212,7 +212,7 @@ class Reset_Password_Serializer(serializers.Serializer):
             user = User.objects.get(pk=pk)
 
             if not PasswordResetTokenGenerator().check_token(user, token):
-                raise serializers.ValidationError('O token é invalido')
+                raise serializers.ValidationError('The token is invalid')
             
             user.set_password(password)
             user.save()
@@ -234,40 +234,40 @@ class Card_Serializer(serializers.ModelSerializer):
 
     def validate_surname(self, value):
         if not value.isalpha():
-            raise serializers.ValidationError('Surname: sem caracteres especiais e numeros.')
+            raise serializers.ValidationError('Surname: without special characters and numbers.')
 
         return value
     
     def validate_number(self,value):
         if number_card_invalid(value):
-            raise serializers.ValidationError('Number: Seguir o modelo 0000 0000 0000 0000')
+            raise serializers.ValidationError('Number: Follow the pattern 0000 0000 0000 0000')
 
         return value
     
     def validate_name(self, value):
         if name_invalid(value):
-            raise serializers.ValidationError('Name: Não deve conter caracteres especias e números.')
+            raise serializers.ValidationError('Name: Should not contain special characters and numbers.')
         
         if not len(value)<=26:
-            raise serializers.ValidationError('Name: Não deve conter até 26 caracteres.')
+            raise serializers.ValidationError('Name: Must contain up to 26 characters.')
 
         return value
     
     def validate_cvv(self, value):
         if not value.isdigit():
-            raise serializers.ValidationError('CVV: Não deve conter apenas número.')
+            raise serializers.ValidationError('CVV: Should contain only numbers.')
 
         if not len(value) == 3:
-            raise serializers.ValidationError('CVV: Não deve conter 3 digitos.')
+            raise serializers.ValidationError('CVV: Should contain 3 digits.')
 
         return value
 
     def validate_validity_date(self, value):
         if date_invalid(value):
-            raise serializers.ValidationError('Date: Seguir o modelo 00/00')
+            raise serializers.ValidationError('Date: Follow the pattern 00/00')
         
         if expired_date_invalid(value):
-            raise serializers.ValidationError('Date: Data do cartão espirado')
+            raise serializers.ValidationError('Date: Card expiration date has passed')
         
         return value
 

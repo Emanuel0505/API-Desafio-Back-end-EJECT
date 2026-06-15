@@ -13,7 +13,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 
 from .models import User, Address, card
 from . import serializers
-from ecommerce.permissions import IsCliente
+from ecommerce.permissions import IsCustomer
 
 class User_register(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
@@ -31,7 +31,7 @@ class User_update(generics.RetrieveUpdateAPIView):
         return self.request.user
     
 class Address_Viewsets(viewsets.ModelViewSet):
-    permission_classes = [IsCliente]
+    permission_classes = [IsCustomer]
     serializer_class = serializers.Address_Serializer
     http_method_names = ['get', 'post', 'put', 'delete']
 
@@ -60,7 +60,7 @@ class Forgot_Password(generics.GenericAPIView):
         email = serializer.data['email']
         user = User.objects.filter(email=email).first()
         if user:
-            #gera o token
+            # generates the token
             encoded_pk = urlsafe_base64_encode(force_bytes(user.pk))
             token = PasswordResetTokenGenerator().make_token(user)
 
@@ -71,7 +71,7 @@ class Forgot_Password(generics.GenericAPIView):
 
             reset_url = f"localhost:8000{reset_url}"
             
-            #template do email
+            # email template
             context  = {
                 'user': user,
                 'reset_url': reset_url,
@@ -80,9 +80,9 @@ class Forgot_Password(generics.GenericAPIView):
 
             plain_message = strip_tags(render_to_string('message_template_reset_password.html', context))
 
-            #manda o token por email
+            # sends the token via email
             send_mail(
-                subject='Redefinição de Senha - NewStyle',
+                subject='Password Reset - NewStyle',
                 message= plain_message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[email,],
@@ -91,8 +91,8 @@ class Forgot_Password(generics.GenericAPIView):
 
             return response.Response(
                 {
-                    'menssage':
-                    'Link para resetar a senha foi enviado para o email'
+                    'message':
+                    'Link to reset password has been sent to email'
                 },
                 status=status.HTTP_200_OK,
             )
@@ -115,15 +115,15 @@ class Reset_Password(generics.GenericAPIView):
 
         return response.Response(
             {
-                'menssage': 
-                'Reset da senha foi concluida'
+                'message': 
+                'Password reset has been completed'
             },
             status=status.HTTP_200_OK,
 
         )
     
 class Card_viewset(viewsets.ModelViewSet):
-    permission_classes = [IsCliente, IsAuthenticated]
+    permission_classes = [IsCustomer, IsAuthenticated]
     serializer_class = serializers.Card_Serializer
     http_method_names = ['get', 'post', 'put', 'delete']
 

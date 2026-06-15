@@ -36,7 +36,7 @@ def path_product_image(instance, filename):
     product_name = slugify(instance.product.title)
     product_path = f'{instance.product.id}_{product_name}'
 
-    #retorna products/id_nameproduct/number.jpg
+    # returns products/id_product_name/number.jpg
     return os.path.join('ecommerce/products', product_path, image_name)
 
 class Images_product(models.Model):
@@ -80,7 +80,7 @@ class Cart(models.Model):
     date_update = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return f'Carrinho de {self.user}'
+        return f'Cart of {self.user}'
     
 class cart_item(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='item')
@@ -119,8 +119,8 @@ class Order_item(models.Model):
     
 class Payment(models.Model):
     PAYMENT_TYPES = [
-        ('credit_card', 'Cartão de Crédito'),
-        ('debit_card', 'Cartão de Débito'),
+        ('credit_card', 'Credit Card'),
+        ('debit_card', 'Debit Card'),
         ('pix', 'PIX'),
         ('boleto', 'Boleto'),
     ]

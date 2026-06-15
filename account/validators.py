@@ -33,23 +33,23 @@ def date_of_birth_invalid_age(value):
     
 def validate_password_unique(value):
     """
-    Validação customizada para senha
+    Custom password validation
     """
 
     if len(value) < 8:
-        raise serializers.ValidationError('Senha: Deve conter no minimo 8 caracteres.')
+        raise serializers.ValidationError('Password: Must contain a minimum of 8 characters.')
     
     if not re.search(r'[^a-zA-Z0-9]', value):
-        raise serializers.ValidationError('Senha: Deve conter no minimo 1 caractere especial.')
+        raise serializers.ValidationError('Password: Must contain at least 1 special character.')
     
     if not re.search(r'[A-Z]', value):
-        raise serializers.ValidationError('Senha: Deve conter no minimo 1 letra maiúscula.')
+        raise serializers.ValidationError('Password: Must contain at least 1 uppercase letter.')
     
     if not re.search(r'[a-z]', value):
-        raise serializers.ValidationError('Senha: Deve conter no minimo 1 letra minúscula.')
+        raise serializers.ValidationError('Password: Must contain at least 1 lowercase letter.')
     
     if not re.search(r'[0-9]', value):
-        raise serializers.ValidationError('Senha: Deve conter no minimo 1 número.')
+        raise serializers.ValidationError('Password: Must contain at least 1 number.')
     
     return value
 
@@ -71,10 +71,10 @@ def expired_date_invalid(date):
 
     date_exp = datetime(year,month,1)
 
-    #data expirada
+    # expired date
     if datetime.now() >= date_exp:
         return True
     
-    #data não expirada
+    # date not expired
     return False
         
