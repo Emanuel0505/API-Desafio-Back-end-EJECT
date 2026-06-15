@@ -183,4 +183,53 @@ class Contact_Support_email_Serializer(serializers.ModelSerializer):
         
         return value
 
+class Cart_item_Serializer(serializers.ModelSerializer):
+    product = Product_Serializer(many=False, read_only=True)
+    # Escrita: aceita apenas o id do produto
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(),
+        source='product',
+        write_only=True
+    )
+    subtotal = serializers.SerializerMethodField(method_name='sub_total')
 
+    class Meta:
+        model = cart_item
+        fields = [
+            'id',
+            'product',
+            'product_id',
+            'amount',
+            'subtotal'
+        ]
+
+    def sub_total(self,item:cart_item):
+        return item.amount * item.product.price
+    
+    def validate_amount(self, value):
+        if value <=0:
+            raise serializers.ValidationError('Quantidade:  Deve ser maior que 0')
+        return value
+    def validate(self, attrs):
+        return super().validate(attrs)
+
+
+class Cart_Serializer(serializers.ModelSerializer):
+    item = Cart_item_Serializer(many = True)
+    total_price = serializers.SerializerMethodField(method_name='total')
+    class Meta:
+        model = Cart
+        fields = [
+            'id',
+            'user',
+            'item',
+            'total_price',
+            'date_update'
+        ]
+
+    def total(self, cart:Cart):
+        items = cart.item.all()
+        total = sum( item.amount * item.product.price for item in items)
+        return total
+    
+    

@@ -35,12 +35,16 @@ class IsCliente(BasePermission):
         return bool(
             request.user and
             request.user.is_authenticated and
-            (request.user.usertype == 'C' or request.user.is_staff)
+            (getattr(request.user, 'usertype', None) == 'C' or request.user.is_staff)
         )
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:
             return True
         
+        if hasattr(obj, 'cart'):
+            return bool(
+                request.user.is_staff or obj.cart.user == request.user
+            )
         
         return bool(
             request.user.is_staff or 

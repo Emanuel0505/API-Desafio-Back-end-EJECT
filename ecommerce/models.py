@@ -75,4 +75,19 @@ class contact_support_email(models.Model):
     subject = models.CharField(max_length=255, blank=False, null=False)
     content = models.TextField(blank=False, null=False)
 
+class Cart(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cart', blank=False, null=False)
+    date_update = models.DateTimeField(default=timezone.now())
+
+    def __str__(self):
+        return f'Carrinho de {self.user}'
+    
+class cart_item(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='item')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    amount = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return f'Item: {self.product.title}'
+    
 

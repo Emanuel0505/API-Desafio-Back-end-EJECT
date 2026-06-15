@@ -2,11 +2,13 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.conf import settings
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.html import strip_tags
 
 from rest_framework import viewsets, filters, response, status
-from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
+from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
 from .models import *
@@ -146,4 +148,40 @@ class Contact_Support_email_viewset(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+class Cart_viewset(viewsets.ModelViewSet):
+    permission_classes = [IsCliente, IsAuthenticated]
+    serializer_class = Cart_Serializer
+    http_method_names = ['get']
 
+    def get_queryset(self):
+        user = self.request.user
+
+        if not user.is_authenticated:
+            return Cart.objects.none()
+        
+        Cart.objects.get_or_create(user=user)
+        
+        return Cart.objects.filter(user=user)
+
+    def list(self, request, *args, **kwargs):
+
+        cart, created = Cart.objects.get_or_create(user=request.user)
+        serializer = self.get_serializer(cart)
+        return Response(serializer.data)
+    
+
+
+class Cart_item_viewset(viewsets.ModelViewSet):
+    permission_classes = [IsCliente, IsAuthenticated]
+    serializer_class = Cart_item_Serializer
+    http_method_names = ['post', 'put', 'delete']
+    queryset = cart_item.objects.all()
+
+    def get_queryset(self):
+        cart, _ = Cart.objects.get_or_create(user=self.request.user)
+        return cart_item.objects.filter(cart=cart)
+    
+    def perform_create(self, serializer):
+        cart, created = Cart.objects.get_or_create(user=self.request.user)
+        serializer.save(cart=cart)
+    
