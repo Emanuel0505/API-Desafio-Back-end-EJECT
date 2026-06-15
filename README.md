@@ -257,3 +257,11 @@ Este projeto é fornecido para fins educacionais e comerciais conforme o context
 ---
 
 **Stack principal:** Django 5.2, Django REST Framework, Simple JWT e drf-yasg.
+
+## 6. Observações sobre evolução da API
+
+A implementação ainda está em construção em alguns pontos do fluxo de pedidos e pagamentos.
+
+- Melhorar o endpoint de `orders` e `payment` para deixar as respostas mais completas e consistentes.
+- Implementar a gestão de pedidos para o lojista, permitindo acompanhar e administrar os pedidos recebidos.
+- Ajustar a documentação do Swagger conforme essas evoluções forem sendo concluídas.
