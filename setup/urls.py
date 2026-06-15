@@ -10,9 +10,9 @@ from rest_framework_simplejwt.views import (
 
 schema_view = get_schema_view(
    openapi.Info(
-      title="Snippets API",
-      default_version='v1',
-      description="API direcionada para simular uma API de um e-commerce",
+        title="NewStyle API",
+        default_version='1.0.0',
+        description="API REST de e-commerce com autenticação JWT, catálogo de produtos, carrinho, pedidos, pagamentos e suporte.",
       terms_of_service="https://www.google.com/policies/terms/",
       contact=openapi.Contact(email="emanuel050506@gmail.com"),
       license=openapi.License(name="BSD License"),
