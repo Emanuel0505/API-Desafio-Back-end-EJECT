@@ -1,5 +1,7 @@
 # E-Commerce API
 
+Site em produção: https://newstyle.pythonanywhere.com
+
 API REST de e-commerce desenvolvida com Django e Django REST Framework para simular um fluxo completo de compra, desde o cadastro do usuário até pedido, pagamento e suporte.
 
 ## 1. Sobre o projeto
