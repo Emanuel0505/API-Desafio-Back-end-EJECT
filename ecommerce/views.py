@@ -239,6 +239,10 @@ class Cart_item_viewset(viewsets.ModelViewSet):
         cart, _ = Cart.objects.get_or_create(user=self.request.user)
         return cart_item.objects.filter(cart=cart)
     
+    def get_cart(self):
+        cart, _ = Cart.objects.get_or_create(user=self.request.user)
+        return cart
+    
     def perform_create(self, serializer):
         """Attach the authenticated user's cart before saving the item."""
         cart, created = Cart.objects.get_or_create(user=self.request.user)
